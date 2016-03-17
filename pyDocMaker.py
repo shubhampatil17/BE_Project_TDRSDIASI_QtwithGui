@@ -4,6 +4,8 @@
 import xml.etree.ElementTree as ET
 from docx import Document
 from docx.shared import Inches
+import os
+import shutil
 
 
 def span(rowSpan,colSpan,cell_row,cell_col,newTable):
@@ -15,7 +17,8 @@ def span(rowSpan,colSpan,cell_row,cell_col,newTable):
 	for i in range(1,int(rowSpan)):
 		newTable.cell(cell_row,cell_col).merge(newTable.cell(cell_row+i,cell_col))	
 		
-import os
+if not os.path.isdir("target"):
+    os.mkdir("target")
 
 path = os.getcwd() 
 for filename in os.listdir(path):
@@ -54,10 +57,17 @@ for filename in os.listdir(path):
 		    bid=bid+1
 
 	    document.add_page_break()
+
 	    id=id+1
+
+        file='target/'+str(filename)
+
+        shutil.move(str(filename),file)
 	filename=filename.split('.')
 
-	document.save(filename[0]+'.docx') 
+
+
+        document.save('target/'+filename[0]+'.docx')
 
 
 
