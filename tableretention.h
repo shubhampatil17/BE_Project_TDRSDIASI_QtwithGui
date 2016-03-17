@@ -30,6 +30,7 @@ class TableRetention
     vector<vector<int>> blockHeightData;
     vector<pair<int,int>> tableDimensions;
     vector<vector<string>> blockTextData;
+    vector<vector<Point>> blockIdData;
 
 
 

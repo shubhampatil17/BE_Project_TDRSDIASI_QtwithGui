@@ -32,7 +32,7 @@ TableRetention::TableRetention(vector<vector<Mat>> segmentationData,
     this->filename = filename;
 
     this->tessObj.Init(NULL,"eng",OEM_DEFAULT);
-    this->tessObj.SetPageSegMode(PSM_AUTO_ONLY);
+    this->tessObj.SetPageSegMode(PSM_AUTO_OSD);
 }
 
 vector<Mat> TableRetention::cellExtraction(vector<Point> dataPoints, Mat img, int tableId){
@@ -58,7 +58,7 @@ vector<Mat> TableRetention::cellExtraction(vector<Point> dataPoints, Mat img, in
 
     for(int i=0; unsigned(i)<dataPoints.size();i++){
 
-        int rowcount=0;//,colcount=0;
+        int rowcount=0;
 
         for(int j=0; unsigned(j) <dataPoints.size();j++){
 
@@ -116,6 +116,7 @@ vector<Mat> TableRetention::cellExtraction(vector<Point> dataPoints, Mat img, in
     vector<int> blockHeightVector;
     pair<int,int> dimensions;
     vector<string> blockTextVector;
+    vector<Point> blockIdVector;
 
     for(int i=0; i<rows-1;i++){
         for(int j=0; j<cols-1;j++){
@@ -259,7 +260,6 @@ vector<Mat> TableRetention::cellExtraction(vector<Point> dataPoints, Mat img, in
                     tessObj.Recognize(0);
                     blockText = tessObj.GetUTF8Text();
 
-                    //cout<<blockText<<"\n";
                     //string imgname = filename+ "_Table"+to_string(tableId)+"_part_" + to_string(i+1)+"x"+to_string(j+1);
                     //imshow(imgname,croppedimage);
                 }
@@ -269,7 +269,7 @@ vector<Mat> TableRetention::cellExtraction(vector<Point> dataPoints, Mat img, in
                 blockWidthVector.push_back(bottomRight.x - topLeft.x);
                 blockHeightVector.push_back(bottomRight.y - topLeft.y);
                 blockTextVector.push_back(blockText);
-
+                blockIdVector.push_back(Point(i,j));
             }
 
         }
@@ -283,6 +283,7 @@ vector<Mat> TableRetention::cellExtraction(vector<Point> dataPoints, Mat img, in
     blockWidthData.push_back(blockWidthVector);
     blockHeightData.push_back(blockHeightVector);
     blockTextData.push_back(blockTextVector);
+    blockIdData.push_back(blockIdVector);
 
     tableDimensions.push_back(dimensions);
 
@@ -299,15 +300,11 @@ vector<vector<Mat>> TableRetention::docRetention(){
 
 
     for(int i=0; unsigned(i)< tableSegments.size(); i++){
-
-        //imshow(filename+"_Table"+to_string(i), tableSegments[i]);
-        //imshow(filename+"_Points"+to_string(i), pointSegments[i]);
         vector<Point> pointDataset = extractIntersectionDataset(pointSegments[i]);
         segmentedCellsInDoc.push_back(cellExtraction(pointDataset, tableSegments[i], i)) ;
     }
 
     return segmentedCellsInDoc;
-    //generateXML(segmentedCellsInDoc);
 }
 
 void TableRetention::generateXML(vector<vector<Mat>> segmentedCellsInDoc){
@@ -346,6 +343,11 @@ void TableRetention::generateXML(vector<vector<Mat>> segmentedCellsInDoc){
         for(int j=0; unsigned(j)< segmentedCellsInDoc[i].size();j++){
             //write<block>
             fp << "\t\t<Block>\n";
+
+            fp << "\t\t\t<Id>\n";
+            fp << "\t\t\t\t<x>" + to_string(blockIdData[i][j].x) + "</x>\n";
+            fp << "\t\t\t\t<y>" + to_string(blockIdData[i][j].y) + "</y>\n";
+            fp << "\t\t\t</Id>\n";
 
             fp << "\t\t\t<RowSpan>" + to_string(blockRowSpanData[i][j]) + "</RowSpan>\n";
             fp << "\t\t\t<ColSpan>" + to_string(blockColSpanData[i][j]) + "</ColSpan>\n";
@@ -390,8 +392,6 @@ int TableRetention::findRetentionColCount(vector<Point> dataPoints){
 
     sort(dataPoints.begin(), dataPoints.end(), sort_y);
 
-    //cout<<dataPoints<<"\n";
-
     int cols=0;
 
     for(int i=1;unsigned(i)< dataPoints.size();i++){
@@ -405,9 +405,6 @@ int TableRetention::findRetentionColCount(vector<Point> dataPoints){
 int TableRetention::findRetentionRowCount(vector<Point> dataPoints){
 
     sort(dataPoints.begin(), dataPoints.end(), sort_x);
-
-    //cout<<dataPoints<<"\n\n";
-
 
     int rows=0;
 
