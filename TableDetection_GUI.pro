@@ -13,9 +13,12 @@ TEMPLATE = app
 
 INCLUDEPATH += /usr/local/include
 INCLUDEPATH += /usr/include
+INCLUDEPATH += /usr/include/python2.7
 
 LIBS += -L/usr/local/lib -lopencv_highgui -lopencv_imgcodecs -lopencv_imgproc -lopencv_core -fopenmp
-LIBS += -L/usr/lib -ltesseract -llept -pthread
+LIBS += -L/usr/lib -ltesseract -llept -pthread #-lPythonQt
+LIBS += -lpython2.7
+
 
 CONFIG +=c++11
 QMAKE_CXXFLAGS += -fopenmp -std=c++11
@@ -48,3 +51,13 @@ HEADERS  += mainwindow.h \
 FORMS    += mainwindow.ui \
     mydialog1.ui \
     mydialog2.ui
+
+OTHER_FILES += \
+    pyDocMaker.py
+
+
+install_this.path = $$OUT_PWD
+install_this.files = $$PWD/pyDocMaker.py
+
+INSTALLS += \
+        install_this

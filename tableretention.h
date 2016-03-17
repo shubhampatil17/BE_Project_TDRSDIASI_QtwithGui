@@ -50,6 +50,8 @@ public:
     int findRetentionRowCount(vector<Point>);
     int findRetentionColCount(vector<Point>);
 
+    Mat cleanImage(Mat);
+
 };
 
 #endif // TABLERETENTION_H

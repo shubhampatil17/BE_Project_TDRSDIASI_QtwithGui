@@ -25,6 +25,7 @@
 #include <QElapsedTimer>
 
 using namespace cv;
+using namespace std;
 
 namespace Ui {
 class MainWindow;

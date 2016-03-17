@@ -249,6 +249,12 @@ vector<Mat> TableRetention::cellExtraction(vector<Point> dataPoints, Mat img, in
 
                 if( (bottomLeft.y - topLeft.y) > ACH && (topRight.x - topLeft.x) > ACH){
 
+                    //string imgname = filename+ "_Table"+to_string(tableId)+"_part_" + to_string(i+1)+"x"+to_string(j+1);
+                    //imshow(imgname,croppedimage);
+
+                    //croppedimage = cleanImage(croppedimage);
+                    //imshow(imgname,croppedimage);
+
                     resize(croppedimage,croppedimage, Size(), 10, 10, INTER_LINEAR);
 
                     tessObj.SetImage((uchar*)croppedimage.data,
@@ -260,8 +266,6 @@ vector<Mat> TableRetention::cellExtraction(vector<Point> dataPoints, Mat img, in
                     tessObj.Recognize(0);
                     blockText = tessObj.GetUTF8Text();
 
-                    //string imgname = filename+ "_Table"+to_string(tableId)+"_part_" + to_string(i+1)+"x"+to_string(j+1);
-                    //imshow(imgname,croppedimage);
                 }
 
                 rowSpanVector.push_back(rowSpan);
@@ -414,4 +418,18 @@ int TableRetention::findRetentionRowCount(vector<Point> dataPoints){
     }
 
     return rows+1;
+}
+
+Mat TableRetention::cleanImage(Mat img){
+
+    Mat hrCleaning = img.clone();
+    Mat vtCleaning = img.clone();
+
+    cvtColor(hrCleaning,hrCleaning, CV_BGR2GRAY);
+    cvtColor(vtCleaning,vtCleaning, CV_BGR2GRAY);
+
+    threshold(hrCleaning,hrCleaning,0,255,CV_THRESH_OTSU);
+    threshold(vtCleaning,vtCleaning,0,255,CV_THRESH_OTSU);
+
+    return hrCleaning;
 }
