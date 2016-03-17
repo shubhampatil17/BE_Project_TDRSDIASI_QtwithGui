@@ -12,3 +12,8 @@ myDialog2::~myDialog2()
 {
     delete ui;
 }
+
+void myDialog2::on_pushButton_clicked()
+{
+    this->close();
+}

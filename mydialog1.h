@@ -15,6 +15,9 @@ public:
     explicit myDialog1(QWidget *parent = 0);
     ~myDialog1();
 
+private slots:
+    void on_pushButton_clicked();
+
 private:
     Ui::myDialog1 *ui;
 };
