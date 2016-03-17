@@ -1,7 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-using namespace std;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -130,6 +129,7 @@ void MainWindow::on_wordgapSlider_valueChanged(int value)
 
 void MainWindow::on_algoFireButton_clicked()
 {
+
     int totalFiles = files.size();
 
     float progressSteps = 100.0/totalFiles;
@@ -137,12 +137,6 @@ void MainWindow::on_algoFireButton_clicked()
 
     omp_lock_t myLock;
     omp_init_lock(&myLock);
-
-
-    //Preprocessing preprocessObj;        //Object of preprocessing class to apply preprocessing operations
-    //AverageCharHeight achObj;           //Object of AverageCharHeight class to calculate ACH of doc
-    //ConnectingComponents connectObj;    //Object of Connectingcomponents class to connect brokn lines
-    //LineProcessing lineProcObj;         //Object of LineProcessing Class to extract horizontal and vertical lines
 
     QElapsedTimer timer;
     timer.start();
@@ -242,6 +236,7 @@ void MainWindow::on_algoFireButton_clicked()
 
     }
 
+    system("python pyDocMaker.py");
     cout << timer.elapsed();
 
     ui->progressBar->setValue(100);
