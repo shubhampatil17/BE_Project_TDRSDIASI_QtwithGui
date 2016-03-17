@@ -2,7 +2,7 @@
 
 
 
-struct comparison_struct {
+struct comparison_ystruct {
 
     bool operator() (Point p, Point q) {
         if(p.x == q.x)
@@ -80,7 +80,7 @@ Mat Reconstruction::reconstruction(Mat &output){
         int p = (int)img.at<uchar>(xpoints[i]);
 
         //=========================================================
-        //Remove squares
+        //Remove squares and undesired lines
 
         if(s==70 && p==40){
             continue;
@@ -92,6 +92,7 @@ Mat Reconstruction::reconstruction(Mat &output){
             continue;
         }
         else if(s==40 && p==40){
+
             line( output_image,xpoints[i-1],xpoints[i],Scalar(255,255,255), 1, 8 , 0);
             Dataset.at<uchar>(xpoints[i])=255;
             Dataset.at<uchar>(xpoints[i-1])=255;
@@ -109,8 +110,9 @@ Mat Reconstruction::reconstruction(Mat &output){
 
     }
 
-    //===================================================================================================================
+    //=======================================================================================================
     //Draw Vertical lines
+
     vector <Point> ypoints;
 
     for (map<int, vector <Point> >::iterator it=pointsy.begin(); it!=pointsy.end(); ++it)
@@ -135,7 +137,7 @@ Mat Reconstruction::reconstruction(Mat &output){
         int p=(int)img.at<uchar>(ypoints[i]);
 
         //=========================================================
-        //Remove squares
+        //Remove squares and undesired lines
 
         if(s==10 && p==70){
             continue;

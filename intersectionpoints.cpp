@@ -38,16 +38,16 @@ Mat IntersectionPoints::findNonIntersectionPts(){
 
     Mat new_image = img.clone();	//copy image data
 
-    Mat left= hitmiss(new_image, hrpattern(1,ACH));
+    Mat left= hitmiss(new_image, horizontalPattern(1,ACH));
     left=left*200;
 
-    Mat right= hitmiss(new_image, hrpattern(0,ACH));
+    Mat right= hitmiss(new_image, horizontalPattern(0,ACH));
     right=right*210;
 
-    Mat top= hitmiss(new_image, vtpattern(1,ACH));
+    Mat top= hitmiss(new_image, verticalPattern(1,ACH));
     top=top*220;
 
-    Mat bottom= hitmiss(new_image, vtpattern(0,ACH));
+    Mat bottom= hitmiss(new_image, verticalPattern(0,ACH));
     bottom=bottom*230;
 
     //-----------------------------------------------------------------
@@ -55,10 +55,10 @@ Mat IntersectionPoints::findNonIntersectionPts(){
     //if possible check if image is non empty
 
     Mat tb=Mat :: zeros(img.rows,img.cols,img.type());
-    Mat tb_aligned = t(top+bottom, ACH);
+    Mat tb_aligned = alignVerticalPoints(top+bottom, ACH);
 
     Mat lr=Mat :: zeros(img.rows,img.cols,img.type());
-    Mat lr_aligned = h(left+right , ACH);
+    Mat lr_aligned = alignHorizontalPoints(left+right , ACH);
 
     //imshow("tb_aligned", tb_aligned);
     //imshow("lr_aligned", lr_aligned);
@@ -128,7 +128,7 @@ Mat IntersectionPoints::pattern(int top_bottom, int left_right, int ACH){
     return kernel_mat;
 }
 
-Mat IntersectionPoints::hrpattern(int leftORight, int ACH){
+Mat IntersectionPoints::horizontalPattern(int leftORight, int ACH){
 
     Mat kernel_mat = Mat::zeros(ACH+2,3*ACH, CV_32S);
 
@@ -164,7 +164,7 @@ Mat IntersectionPoints::hrpattern(int leftORight, int ACH){
 
 }
 
-Mat IntersectionPoints::vtpattern(int topObottom, int ACH){
+Mat IntersectionPoints::verticalPattern(int topObottom, int ACH){
 
     Mat kernel_mat = Mat::zeros(3*ACH,ACH+2, CV_32S);
 
@@ -206,7 +206,7 @@ Mat IntersectionPoints::vtpattern(int topObottom, int ACH){
 
 }
 
-Mat IntersectionPoints::h(Mat lr, int ACH){
+Mat IntersectionPoints::alignHorizontalPoints(Mat lr, int ACH){
 
     Mat img=lr.clone();
 
@@ -266,7 +266,7 @@ Mat IntersectionPoints::h(Mat lr, int ACH){
 
 }
 
-Mat IntersectionPoints::t(Mat tb, int ACH){
+Mat IntersectionPoints::alignVerticalPoints(Mat tb, int ACH){
 
     Mat img=tb.clone();
 

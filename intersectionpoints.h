@@ -23,10 +23,10 @@ public:
     Mat hitmiss(Mat,Mat);
     Mat pattern(int, int, int);
 
-    Mat hrpattern(int, int);
-    Mat vtpattern(int, int);
-    Mat h(Mat, int);
-    Mat t(Mat, int);
+    Mat horizontalPattern(int, int);
+    Mat verticalPattern(int, int);
+    Mat alignHorizontalPoints(Mat, int);
+    Mat alignVerticalPoints(Mat, int);
 };
 
 #endif // INTERSECTIONPOINTS_H
