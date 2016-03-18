@@ -8,12 +8,13 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     setWindowTitle("Automatic Table Detection from Scanned Document Images Via Analysis of Structural Information");
-    setFixedSize(800,500);
+    setFixedSize(800,550);
 
     md1 = new myDialog1();
     md2 = new myDialog2();
 
     achFactor = 0;
+    wordgapFactor = 0;
 
     ui->frame->setEnabled(true);
     ui->frame_2->setEnabled(false);
@@ -25,8 +26,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->statusLabel->setText("Status : Input files not loaded");
 
     ui->menuInput->actions().at(0)->setEnabled(false);
+
     ui->achSlider->setSliderPosition(7);
     ui->achValue->setText(QString::number(ui->achSlider->value()));
+
+    ui->wordgapSlider->setSliderPosition(3);
+    ui->wordgapValue->setText(QString::number(ui->wordgapSlider->value()));
+
+    ui->method1CheckBox->setChecked(true);
+    ui->method2CheckBox->setChecked(false);
+    ui->skewCheckBox->setChecked(false);
 
 }
 
@@ -125,10 +134,12 @@ void MainWindow::on_achSlider_valueChanged(int value)
 void MainWindow::on_wordgapSlider_valueChanged(int value)
 {
     ui->wordgapValue->setText(QString::number(value));
+    wordgapFactor = ui->wordgapSlider->value();
 }
 
 void MainWindow::on_algoFireButton_clicked()
 {
+    ui->frame_4->setEnabled(false);
 
     int totalFiles = files.size();
 
@@ -141,98 +152,193 @@ void MainWindow::on_algoFireButton_clicked()
     QElapsedTimer timer;
     timer.start();
 
-    //#pragma omp parallel for
-    for(int i=0;i< totalFiles;i++){
+    if(ui->method1CheckBox->isChecked() == true){
 
-        Mat image = imread(files[i], IMREAD_GRAYSCALE);
-        Mat clrImage = imread(files[i], IMREAD_COLOR);
+        #pragma omp parallel for
+        for(int i=0;i< totalFiles;i++){
 
-        if(!image.data){
-            ui->progressLabel->setText("Skipping file : "+QString::number(i+1)+"/"
-                                       +QString::number(totalFiles)+". Error: Not an Image.");
-        }else{
+            Mat image = imread(files[i], IMREAD_GRAYSCALE);
+            Mat clrImage = imread(files[i], IMREAD_COLOR);
 
-            //imshow("Image"+files[i],clrImage);
-            ui->progressLabel->setText("Processing file : "+QString::number(i+1)+"/"
-                                       +QString::number(totalFiles)+".");
+            if(!image.data){
+                ui->progressLabel->setText("Skipping file : "+QString::number(i+1)+"/"
+                                           +QString::number(totalFiles)+". Error: Not an Image.");
+            }else{
+
+                //imshow("Image"+files[i],clrImage);
+                ui->progressLabel->setText("Processing file : "+QString::number(i+1)+"/"
+                                           +QString::number(totalFiles)+".");
 
 
-            Preprocessing *preprocessObj = new Preprocessing(image);
-            Mat binimg = preprocessObj->binarization();
-            //imshow("Binary"+files[i],binimg);
+                Preprocessing *preprocessObj = new Preprocessing(image);
 
-            AverageCharHeight *achObj = new AverageCharHeight(binimg);
-            int ACH = achObj->calculateACH();
-            //cout<<ACH<<"\n";
+                if(ui->skewCheckBox->isChecked()){
+                    preprocessObj->skewCorrection();
+                }
 
-            if(ACH > 15){
-                ACH = 7;
+                Mat binimg = preprocessObj->binarization();
+                //imshow("Binary"+files[i],binimg);
+
+                AverageCharHeight *achObj = new AverageCharHeight(binimg);
+                int ACH = achObj->calculateACH();
+                //cout<<ACH<<"\n";
+
+                if(ACH > 15){
+                    ACH = 7;
+                }
+
+                ConnectingComponents *connectObj = new ConnectingComponents(binimg, ACH);
+                Mat connectedImg = connectObj->connectBrokenLines();
+
+                LineProcessing *lineProcObj = new LineProcessing(connectedImg);
+
+                //=========== PHASE I =======================================================
+
+                Mat horizProcessedImg = lineProcObj->horizontalProcessing(2*ACH);
+                Mat vertiProcessedImg = lineProcObj->verticalProcessing(2*ACH);
+
+                //=========== PHASE II ======================================================
+
+                horizProcessedImg = lineProcObj->horizontalProcessing(achFactor*ACH);
+                vertiProcessedImg = lineProcObj->verticalProcessing(achFactor*ACH);
+
+                //===========================================================================
+
+                Mat mergedImg = horizProcessedImg + vertiProcessedImg;        //Operator Overloading
+                //imshow("Merged"+files[i],mergedImg);
+
+
+                IntersectionPoints *findPtsObj = new IntersectionPoints(mergedImg, ACH);
+                Mat intersectionPts = findPtsObj->findIntersectionPts();
+                //imshow("Intersection"+files[i],intersectionPts);
+
+                Mat singleIntersectionPts = findPtsObj->findNonIntersectionPts();
+                //imshow("SingleIntersection"+files[i], singleIntersectionPts);
+
+
+                Mat reconstructedImg = Mat::zeros(binimg.rows, binimg.cols, binimg.type());
+
+                Reconstruction *reconsObj = new Reconstruction(intersectionPts + singleIntersectionPts, ACH);
+                Mat dataPoints = reconsObj->reconstruction(reconstructedImg);
+                //imshow("Reconstruct"+files[i],reconstructedImg);
+
+
+                preprocessObj = new Preprocessing(dataPoints.clone());
+                Mat pointClusterReducedImg = preprocessObj->pointClusterReduction();
+                //imshow("pointReduced"+files[i], pointClusterReducedImg);
+
+
+                PageSegmentation *pageSegObj = new PageSegmentation(reconstructedImg.clone(),
+                                                                    pointClusterReducedImg,
+                                                                    clrImage,
+                                                                    files[i] );
+
+                vector<vector<Mat>> segmentationData = pageSegObj->multiTablePageSegmentation();
+                vector<vector<int>> offsetData = pageSegObj->getSegmentOffsetData();
+
+
+                TableRetention *tableRetObj = new TableRetention(segmentationData, offsetData, ACH, files[i]);
+                vector<vector<Mat>> segmentedCellsInDoc = tableRetObj->docRetention();
+
+                tableRetObj->generateXML(segmentedCellsInDoc);
             }
 
-            ConnectingComponents *connectObj = new ConnectingComponents(binimg, ACH);
-            Mat connectedImg = connectObj->connectBrokenLines();
+            //============LOCK_SET ===========================
+            omp_set_lock(&myLock);
 
-            LineProcessing *lineProcObj = new LineProcessing(connectedImg);
+            progressValue += progressSteps;
+            ui->progressBar->setValue(int(progressValue));
 
-            //=========== PHASE I =======================================================
+            omp_unset_lock(&myLock);
+            //============LOCK_UNSET =========================
 
-            Mat horizProcessedImg = lineProcObj->horizontalProcessing(2*ACH);
-            Mat vertiProcessedImg = lineProcObj->verticalProcessing(2*ACH);
-
-            //=========== PHASE II ======================================================
-
-            horizProcessedImg = lineProcObj->horizontalProcessing(achFactor*ACH);
-            vertiProcessedImg = lineProcObj->verticalProcessing(achFactor*ACH);
-
-            //===========================================================================
-
-            Mat mergedImg = horizProcessedImg + vertiProcessedImg;        //Operator Overloading
-            //imshow("Merged"+files[i],mergedImg);
-
-
-            IntersectionPoints *findPtsObj = new IntersectionPoints(mergedImg, ACH);
-            Mat intersectionPts = findPtsObj->findIntersectionPts();
-            //imshow("Intersection"+files[i],intersectionPts);
-
-            Mat singleIntersectionPts = findPtsObj->findNonIntersectionPts();
-            //imshow("SingleIntersection"+files[i], singleIntersectionPts);
-
-
-            Mat reconstructedImg = Mat::zeros(binimg.rows, binimg.cols, binimg.type());
-
-            Reconstruction *reconsObj = new Reconstruction(intersectionPts + singleIntersectionPts, ACH);
-            Mat dataPoints = reconsObj->reconstruction(reconstructedImg);
-            //imshow("Reconstruct"+files[i],reconstructedImg);
-
-
-            preprocessObj = new Preprocessing(dataPoints.clone());
-            Mat pointClusterReducedImg = preprocessObj->pointClusterReduction();
-            //imshow("pointReduced"+files[i], pointClusterReducedImg);
-
-
-            PageSegmentation *pageSegObj = new PageSegmentation(reconstructedImg.clone(),
-                                                                pointClusterReducedImg,
-                                                                clrImage,
-                                                                files[i] );
-
-            vector<vector<Mat>> segmentationData = pageSegObj->multiTablePageSegmentation();
-            vector<vector<int>> offsetData = pageSegObj->getSegmentOffsetData();
-
-
-            TableRetention *tableRetObj = new TableRetention(segmentationData, offsetData, ACH, files[i]);
-            vector<vector<Mat>> segmentedCellsInDoc = tableRetObj->docRetention();
-
-            tableRetObj->generateXML(segmentedCellsInDoc);
         }
 
-        //============LOCK_SET ===========================
-        omp_set_lock(&myLock);
 
-        progressValue += progressSteps;
-        ui->progressBar->setValue(int(progressValue));
+    }else{
 
-        omp_unset_lock(&myLock);
-        //============LOCK_UNSET =========================
+        #pragma omp parallel for
+        for(int i=0;i< totalFiles;i++){
+
+            Mat image = imread(files[i], IMREAD_GRAYSCALE);
+            Mat clrImage = imread(files[i], IMREAD_COLOR);
+
+            if(!image.data){
+                ui->progressLabel->setText("Skipping file : "+QString::number(i+1)+"/"
+                                           +QString::number(totalFiles)+". Error: Not an Image.");
+            }else{
+
+                //imshow("Image"+files[i],clrImage);
+                ui->progressLabel->setText("Processing file : "+QString::number(i+1)+"/"
+                                           +QString::number(totalFiles)+".");
+
+
+                Preprocessing *preprocessObj = new Preprocessing(image);
+                Mat binimg = preprocessObj->binarization();
+                //imshow("Binary"+files[i],binimg);
+
+                AverageCharHeight *achObj = new AverageCharHeight(binimg);
+                int ACH = achObj->calculateACH();
+                //cout<<ACH<<"\n";
+
+                if(ACH > 15){
+                    ACH = 7;
+                }
+
+                ConnectingComponents *connectObj = new ConnectingComponents(binimg, ACH);
+                Mat connectedImg = connectObj->connectBrokenLines();
+
+                LineProcessing *lineProcObj = new LineProcessing(connectedImg);
+
+                //=========== PHASE I =======================================================
+
+                Mat horizProcessedImg = lineProcObj->horizontalProcessing(2*ACH);
+                Mat vertiProcessedImg = lineProcObj->verticalProcessing(2*ACH);
+
+                //=========== PHASE II ======================================================
+
+                horizProcessedImg = lineProcObj->horizontalProcessing(achFactor*ACH);
+                vertiProcessedImg = lineProcObj->verticalProcessing(achFactor*ACH);
+
+                //===========================================================================
+
+
+                Mat without_lines = binimg - horizProcessedImg - vertiProcessedImg;        //Operator Overloading
+
+                whitespaceprocessing *whitespaceprocobj = new whitespaceprocessing(without_lines);
+                Mat processedImage = whitespaceprocobj->white_space_process();
+
+                whitespaceseg *whitespacesegobj = new whitespaceseg();
+                vector<Mat> single_lines=whitespacesegobj->white_space_seg(processedImage);
+
+                vector<pair <Point, Point> > Pairs=whitespacesegobj->getpairs();
+                //cout<<single_lines.size();
+
+                Detect_table *detecttableobj = new Detect_table();
+                Mat table_img=detecttableobj->detecttable(single_lines,without_lines,Pairs);
+                //imshow("asdadas",table_img);
+
+                vector<int> final_line_no=detecttableobj->returnfinal_line_no();
+
+                int thres=detecttableobj->returnthres();
+
+                WSretention *wsretentionobj = new WSretention();
+                vector<Mat> blocks=wsretentionobj->retention(single_lines,table_img,Pairs,final_line_no,thres);
+                wsretentionobj->passToTesseract(blocks, files[i]);
+
+            }
+
+            //============LOCK_SET ===========================
+            omp_set_lock(&myLock);
+
+            progressValue += progressSteps;
+            ui->progressBar->setValue(int(progressValue));
+
+            omp_unset_lock(&myLock);
+            //============LOCK_UNSET =========================
+
+        }
+
 
     }
 
@@ -244,9 +350,28 @@ void MainWindow::on_algoFireButton_clicked()
     ui->frame->setEnabled(true);
     ui->frame_2->setEnabled(false);
     ui->frame_3->setEnabled(false);
+    ui->frame_4->setEnabled(true);
 
     md2->show();
 
     omp_destroy_lock(&myLock);
 
+}
+
+void MainWindow::on_method1CheckBox_toggled(bool checked)
+{
+    if(checked == true){
+        ui->method2CheckBox->setChecked(false);
+    }else{
+        ui->method2CheckBox->setChecked(true);
+    }
+}
+
+void MainWindow::on_method2CheckBox_toggled(bool checked)
+{
+    if(checked == true){
+        ui->method1CheckBox->setChecked(false);
+    }else{
+        ui->method1CheckBox->setChecked(true);
+    }
 }

@@ -34,7 +34,11 @@ SOURCES += main.cpp\
     intersectionpoints.cpp \
     reconstruction.cpp \
     pagesegmentation.cpp \
-    tableretention.cpp
+    tableretention.cpp \
+    detecttabularlines.cpp \
+    white_space_processing.cpp \
+    whitespacesegmentation.cpp \
+    wsretention.cpp
 
 HEADERS  += mainwindow.h \
     mydialog1.h \
@@ -46,7 +50,11 @@ HEADERS  += mainwindow.h \
     intersectionpoints.h \
     reconstruction.h \
     pagesegmentation.h \
-    tableretention.h
+    tableretention.h \
+    detecttabularlines.h \
+    white_space_processing.h \
+    whitespacesegmentation.h \
+    wsretention.h
 
 FORMS    += mainwindow.ui \
     mydialog1.ui \

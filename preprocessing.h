@@ -5,6 +5,7 @@
 #include <omp.h>
 
 using namespace cv;
+using namespace std;
 
 class Preprocessing
 {
@@ -15,6 +16,8 @@ public:
 
     Mat binarization();
     Mat pointClusterReduction();
+    void skewCorrection();
+    void deskew(double);
 
 };
 

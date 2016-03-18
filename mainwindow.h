@@ -5,6 +5,8 @@
 #include <opencv2/opencv.hpp>
 
 #include "tableretention.h"
+#include "wsretention.h"
+
 
 #include "mydialog1.h"
 #include "mydialog2.h"
@@ -16,6 +18,10 @@
 #include "intersectionpoints.h"
 #include "reconstruction.h"
 #include "pagesegmentation.h"
+
+#include "white_space_processing.h"
+#include "whitespacesegmentation.h"
+#include "detecttabularlines.h"
 
 #include <vector>
 #include <omp.h>
@@ -62,6 +68,10 @@ private slots:
 
     void on_algoFireButton_clicked();
 
+    void on_method1CheckBox_toggled(bool checked);
+
+    void on_method2CheckBox_toggled(bool checked);
+
 private:
     Ui::MainWindow *ui;
 
@@ -70,6 +80,7 @@ private:
 
     std::vector<String> files;
     int achFactor;
+    int wordgapFactor;
 };
 
 #endif // MAINWINDOW_H

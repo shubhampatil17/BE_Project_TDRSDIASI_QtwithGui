@@ -25,7 +25,7 @@ for filename in os.listdir(path):
     	if not filename.endswith('.xml'): continue
 	document = Document()
 
-	print filename
+        #print filename
 
 	tree = ET.parse(filename)
 	root = tree.getroot()
@@ -36,8 +36,8 @@ for filename in os.listdir(path):
 	    rows = int(rows)
 	    columns = table.find('Cols').text
 	    columns = int(columns)
-	    print "Table Id: "+str(id)
-	    print "Table Rows,Columns: "+str(rows)+","+str(columns)
+            #print "Table Id: "+str(id)
+            #print "Table Rows,Columns: "+str(rows)+","+str(columns)
 	    newTable = document.add_table(rows=rows, cols=columns)	#create table with given rows and columns
 	    bid=0
 	    for blocks in table.findall('Block'):
@@ -65,9 +65,11 @@ for filename in os.listdir(path):
         shutil.move(str(filename),file)
 	filename=filename.split('.')
 
+        filename[len(filename)-1] = "docx"
 
+        filename = ".".join([ str(item) for item in filename])
 
-        document.save('target/'+filename[0]+'.docx')
+        document.save('target/'+filename)
 
 
 

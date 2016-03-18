@@ -21,6 +21,62 @@ Mat Preprocessing::binarization(){
     return binimg;
 }
 
+void Preprocessing::skewCorrection(){
+
+    Mat src = img.clone();
+
+    Size size = src.size();
+    bitwise_not(src, src);
+    vector<Vec4i> lines;
+    HoughLinesP(img, lines, 1, CV_PI/180, 100, size.width / 2.f, 20);
+
+    Mat disp_lines(size, CV_8UC1, Scalar(0, 0, 0));
+    double angle = 0.;
+    unsigned nb_lines = lines.size();
+
+    for (unsigned i = 0; i < nb_lines; ++i)
+    {
+        line(disp_lines, Point(lines[i][0], lines[i][1]),
+        Point(lines[i][2], lines[i][3]), Scalar(255, 0 ,0));
+        angle += atan2((double)lines[i][3] - lines[i][1],
+        (double)lines[i][2] - lines[i][0]);
+    }
+
+    deskew(angle * 180 / CV_PI);
+
+    angle /= nb_lines; // mean angle, in radians.
+
+
+}
+
+void Preprocessing::deskew(double angle){
+
+    bitwise_not(img, img);
+
+    vector<Point> points;
+    Mat_<uchar>::iterator it = img.begin<uchar>();
+    Mat_<uchar>::iterator end = img.end<uchar>();
+    for (; it != end; ++it)
+        if (*it)
+            points.push_back(it.pos());
+
+    RotatedRect box = minAreaRect(Mat(points));
+    Mat rot_mat = getRotationMatrix2D(box.center, angle, 1);
+
+    Mat rotated;
+    warpAffine(img, rotated, rot_mat, img.size(), INTER_CUBIC);
+
+    Size box_size = box.size;
+
+    if (box.angle < -45.)
+       swap(box_size.width, box_size.height);
+
+    Mat cropped;
+    getRectSubPix(rotated, box_size, box.center, cropped);
+
+    img = cropped;
+}
+
 Mat Preprocessing::pointClusterReduction(){
 
     //#pragma omp parallel for
