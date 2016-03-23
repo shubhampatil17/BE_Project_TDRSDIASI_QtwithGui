@@ -32,7 +32,7 @@ TableRetention::TableRetention(vector<vector<Mat>> segmentationData,
     this->filename = filename;
 
     this->tessObj.Init(NULL,"eng",OEM_DEFAULT);
-    this->tessObj.SetPageSegMode(PSM_AUTO_OSD);
+    this->tessObj.SetPageSegMode(PSM_AUTO);
 }
 
 vector<Mat> TableRetention::cellExtraction(vector<Point> dataPoints, Mat img, int tableId){

@@ -14,7 +14,7 @@ class Detect_table{
 	vector<int> final_line_no;
 	int thres;
 public:
-	Mat detecttable (vector<Mat>,Mat,vector<pair <Point, Point> >);
+    Mat detecttable (vector<Mat>,Mat,Mat,vector<pair <Point, Point> >);
     vector<int> returnfinal_line_no();
     int returnthres();
 };

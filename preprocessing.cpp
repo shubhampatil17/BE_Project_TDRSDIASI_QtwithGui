@@ -23,10 +23,17 @@ Mat Preprocessing::binarization(){
 
 void Preprocessing::skewCorrection(){
 
+    Mat bin2;
+    threshold(img,bin2,0,255,CV_THRESH_BINARY_INV |CV_THRESH_OTSU);
+    imshow("asdsada",bin2);
+
     Mat src = img.clone();
 
+
     Size size = src.size();
+
     bitwise_not(src, src);
+
     vector<Vec4i> lines;
     HoughLinesP(img, lines, 1, CV_PI/180, 100, size.width / 2.f, 20);
 
@@ -42,14 +49,15 @@ void Preprocessing::skewCorrection(){
         (double)lines[i][2] - lines[i][0]);
     }
 
+
     deskew(angle * 180 / CV_PI);
 
     angle /= nb_lines; // mean angle, in radians.
 
-
 }
 
 void Preprocessing::deskew(double angle){
+
 
     bitwise_not(img, img);
 
@@ -66,15 +74,25 @@ void Preprocessing::deskew(double angle){
     Mat rotated;
     warpAffine(img, rotated, rot_mat, img.size(), INTER_CUBIC);
 
-    Size box_size = box.size;
+    //Size box_size = box.size;
 
-    if (box.angle < -45.)
-       swap(box_size.width, box_size.height);
+    //if (box.angle < -45.)
+      // swap(box_size.width, box_size.height);
 
-    Mat cropped;
-    getRectSubPix(rotated, box_size, box.center, cropped);
+    //Mat rot_mat_rev = getRotationMatrix2D(box.center, -angle, 1);
+    //Mat rotated_rev;
+    //warpAffine(rotated, rotated_rev, rot_mat_rev ,img.size(), INTER_CUBIC);
 
-    img = cropped;
+    Mat bin1;
+    threshold(rotated,bin1,0,255,CV_THRESH_BINARY_INV|CV_THRESH_OTSU);
+    imshow("qweqrasr",bin1);
+
+
+
+    //Mat cropped;
+    //getRectSubPix(rotated, box_size, box.center, cropped);
+
+    //img = cropped;
 }
 
 Mat Preprocessing::pointClusterReduction(){

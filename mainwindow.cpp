@@ -33,11 +33,11 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->wordgapSlider->setSliderPosition(3);
     ui->wordgapValue->setText(QString::number(ui->wordgapSlider->value()));
 
-    ui->method1CheckBox->setChecked(true);
-    ui->method2CheckBox->setChecked(false);
+    ui->method1CheckBox->setChecked(false);
+    ui->method2CheckBox->setChecked(true);
     ui->skewCheckBox->setChecked(false);
-
 }
+
 
 MainWindow::~MainWindow()
 {
@@ -158,6 +158,9 @@ void MainWindow::on_algoFireButton_clicked()
         for(int i=0;i< totalFiles;i++){
 
             Mat image = imread(files[i], IMREAD_GRAYSCALE);
+
+            //imwrite("target/"+to_string(i)+"_input.png",image);
+
             Mat clrImage = imread(files[i], IMREAD_COLOR);
 
             if(!image.data){
@@ -177,11 +180,12 @@ void MainWindow::on_algoFireButton_clicked()
                 }
 
                 Mat binimg = preprocessObj->binarization();
-                //imshow("Binary"+files[i],binimg);
+                //imshow("Binary"+files[i]+"sad",binimg);
+
 
                 AverageCharHeight *achObj = new AverageCharHeight(binimg);
                 int ACH = achObj->calculateACH();
-                //cout<<ACH<<"\n";
+                cout<<ACH<<"\n";
 
                 if(ACH > 15){
                     ACH = 7;
@@ -189,6 +193,7 @@ void MainWindow::on_algoFireButton_clicked()
 
                 ConnectingComponents *connectObj = new ConnectingComponents(binimg, ACH);
                 Mat connectedImg = connectObj->connectBrokenLines();
+
 
                 LineProcessing *lineProcObj = new LineProcessing(connectedImg);
 
@@ -206,26 +211,28 @@ void MainWindow::on_algoFireButton_clicked()
 
                 Mat mergedImg = horizProcessedImg + vertiProcessedImg;        //Operator Overloading
                 //imshow("Merged"+files[i],mergedImg);
+                //imshow("merged", mergedImg);
 
 
                 IntersectionPoints *findPtsObj = new IntersectionPoints(mergedImg, ACH);
                 Mat intersectionPts = findPtsObj->findIntersectionPts();
-                //imshow("Intersection"+files[i],intersectionPts);
+                //imwrite("Intersection"+files[i]+".jpg",intersectionPts);
 
                 Mat singleIntersectionPts = findPtsObj->findNonIntersectionPts();
-                //imshow("SingleIntersection"+files[i], singleIntersectionPts);
+                //imwrite("SingleIntersection"+files[i]+".jpg", singleIntersectionPts);
 
 
                 Mat reconstructedImg = Mat::zeros(binimg.rows, binimg.cols, binimg.type());
 
-                Reconstruction *reconsObj = new Reconstruction(intersectionPts + singleIntersectionPts, ACH);
+                Reconstruction *reconsObj = new Reconstruction(intersectionPts + singleIntersectionPts
+                                                               , ACH);
                 Mat dataPoints = reconsObj->reconstruction(reconstructedImg);
-                //imshow("Reconstruct"+files[i],reconstructedImg);
-
-
+                //imwrite("target/"+to_string(i)+"output.png",reconstructedImg);
+                //imwrite("datapoints.jpg" , dataPoints);
                 preprocessObj = new Preprocessing(dataPoints.clone());
                 Mat pointClusterReducedImg = preprocessObj->pointClusterReduction();
                 //imshow("pointReduced"+files[i], pointClusterReducedImg);
+
 
 
                 PageSegmentation *pageSegObj = new PageSegmentation(reconstructedImg.clone(),
@@ -257,7 +264,7 @@ void MainWindow::on_algoFireButton_clicked()
 
     }else{
 
-        #pragma omp parallel for
+        //#pragma omp parallel for
         for(int i=0;i< totalFiles;i++){
 
             Mat image = imread(files[i], IMREAD_GRAYSCALE);
@@ -275,7 +282,7 @@ void MainWindow::on_algoFireButton_clicked()
 
                 Preprocessing *preprocessObj = new Preprocessing(image);
                 Mat binimg = preprocessObj->binarization();
-                //imshow("Binary"+files[i],binimg);
+                imwrite("Binary.jpg",binimg);
 
                 AverageCharHeight *achObj = new AverageCharHeight(binimg);
                 int ACH = achObj->calculateACH();
@@ -284,6 +291,8 @@ void MainWindow::on_algoFireButton_clicked()
                 if(ACH > 15){
                     ACH = 7;
                 }
+
+                cout<<ACH<<"\n";
 
                 ConnectingComponents *connectObj = new ConnectingComponents(binimg, ACH);
                 Mat connectedImg = connectObj->connectBrokenLines();
@@ -305,6 +314,13 @@ void MainWindow::on_algoFireButton_clicked()
 
                 Mat without_lines = binimg - horizProcessedImg - vertiProcessedImg;        //Operator Overloading
 
+                Mat withOutLines=without_lines.clone();
+                withOutLines=(withOutLines==0);
+                withOutLines=withOutLines*255;
+
+                //imwrite("target/"+to_string(i)+"_without_line_output.png",withOutLines);
+
+
                 whitespaceprocessing *whitespaceprocobj = new whitespaceprocessing(without_lines);
                 Mat processedImage = whitespaceprocobj->white_space_process();
 
@@ -315,8 +331,8 @@ void MainWindow::on_algoFireButton_clicked()
                 //cout<<single_lines.size();
 
                 Detect_table *detecttableobj = new Detect_table();
-                Mat table_img=detecttableobj->detecttable(single_lines,without_lines,Pairs);
-                //imshow("asdadas",table_img);
+                Mat table_img=detecttableobj->detecttable(single_lines,withOutLines,clrImage,Pairs);
+                imwrite(files[i]+"_out",table_img);
 
                 vector<int> final_line_no=detecttableobj->returnfinal_line_no();
 

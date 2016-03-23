@@ -3,6 +3,7 @@
 
 #include <opencv/cv.hpp>
 #include <omp.h>
+#include <iostream>
 
 using namespace cv;
 using namespace std;

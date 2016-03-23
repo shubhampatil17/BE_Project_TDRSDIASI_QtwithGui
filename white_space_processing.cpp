@@ -16,7 +16,7 @@ Mat whitespaceprocessing::white_space_process()
 		//namedWindow("binary");
 		//imshow("binary",binary);
 
-		element = getStructuringElement(cv::MORPH_RECT, cv::Size(2,2) );
+        element = getStructuringElement(cv::MORPH_RECT, cv::Size(1,1) );
         morphologyEx(img, binary, CV_MOP_OPEN, element);
 
 		return binary;

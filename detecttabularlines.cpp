@@ -1,9 +1,9 @@
 #include "detecttabularlines.h"
 
 
-Mat Detect_table::detecttable(vector<Mat> s_lines,Mat imgg,vector<pair <Point, Point> > P)
+Mat Detect_table::detecttable(vector<Mat> s_lines,Mat imgg,Mat origImg,vector<pair <Point, Point> > P)
 {
-	Mat img=imgg;
+    Mat img=origImg;
 	vector<Mat>single_lines= s_lines;
 	vector<pair <Point, Point> > Pairs=P;
 	int flag[single_lines.size()];
@@ -94,7 +94,9 @@ Mat Detect_table::detecttable(vector<Mat> s_lines,Mat imgg,vector<pair <Point, P
 			if(space[i]>=thres)
 				thres=i;
 			}
-		thres=2.5*thres;
+
+
+        thres=8*thres;
 
         for(int i=0;unsigned(i)<single_lines.size();i++)
 		{
@@ -105,7 +107,7 @@ Mat Detect_table::detecttable(vector<Mat> s_lines,Mat imgg,vector<pair <Point, P
         for(int i=0;unsigned(i)<single_lines.size();i++)
 		{
 			if(((Pairs[i].second.y)-(Pairs[i].first.y))>max_line_height && i!=0)
-								rectangle(img,Pairs[i].first,Pairs[i].second,Scalar(255,255,255),-1,8);
+                                rectangle(img,Pairs[i].first,Pairs[i].second,Scalar(255,255,255),-1,8);
 					else if(flag[i]==3 && (flag[i-1]==1 || flag[i-1]==2)){
                         //cout<<i<<Pairs[i].first<<"\t"<<Pairs[i].second<<"\n";
                         flag[i]=1;

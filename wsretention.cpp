@@ -12,7 +12,7 @@ vector<Mat> WSretention::retention(vector<Mat> s_lines,Mat imgg,vector<pair <Poi
 	vector<int> final_line_no=line_no;
 	int *VH;
 	int pixel;
-	int thres=t;
+    int thres=t/2;
 
 	Point topleft,bottomright;
 		vector<Mat> blocks;
@@ -63,7 +63,7 @@ vector<Mat> WSretention::retention(vector<Mat> s_lines,Mat imgg,vector<pair <Poi
 				{
                     //cout<<"g"<<endl;
 					bottomright.x=Pairs[lineno].first.x+q;
-                    Rect rec= Rect(topleft.x,topleft.y,bottomright.x-topleft.x-1,bottomright.y-topleft.y);
+                    Rect rec= Rect(topleft.x,topleft.y,bottomright.x-topleft.x-2,bottomright.y-topleft.y);
 					cout<<topleft<<"\t"<<bottomright<<endl;
 					blocks.push_back(cv::Mat(img,rec));
 					topleft.x=bottomright.x-3;
@@ -76,8 +76,8 @@ vector<Mat> WSretention::retention(vector<Mat> s_lines,Mat imgg,vector<pair <Poi
 
 				//std::string s = std::to_string(42);
 
-                    string imgname = "Table_part_" +ss.str();
-                    imshow(imgname,cropped);
+                    //string imgname = "Table_part_" +ss.str();
+                    //imshow(imgname,cropped);
 					z++;
 				}
 
@@ -106,6 +106,10 @@ void WSretention::passToTesseract(vector<Mat> blocks, String filename){
     ofstream fp;
 
     fp.open(filename, ios::out|ios::trunc);
+
+    for(int i=0; unsigned(i)<blocks.size();i++){
+        resize(blocks[i],blocks[i],Size(),10,10,INTER_LINEAR);
+    }
 
 
     for(int i=0;unsigned(i)<blocks.size();i++){

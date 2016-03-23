@@ -25,7 +25,7 @@ for filename in os.listdir(path):
     	if not filename.endswith('.xml'): continue
 	document = Document()
 
-        #print filename
+        print filename
 
 	tree = ET.parse(filename)
 	root = tree.getroot()
@@ -36,6 +36,9 @@ for filename in os.listdir(path):
 	    rows = int(rows)
 	    columns = table.find('Cols').text
 	    columns = int(columns)
+            if rows == 0 or columns == 0:
+                id=id+1
+                continue
             #print "Table Id: "+str(id)
             #print "Table Rows,Columns: "+str(rows)+","+str(columns)
 	    newTable = document.add_table(rows=rows, cols=columns)	#create table with given rows and columns

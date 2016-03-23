@@ -42,6 +42,7 @@ Mat LineProcessing::horizontalProcessing(int ACH){
 
                 if( pointer >= img.cols)
                     break;
+
             }
 
             if( procVector.size() > unsigned(ACH)){

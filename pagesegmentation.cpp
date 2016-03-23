@@ -40,7 +40,8 @@ vector<vector<Mat>> PageSegmentation::multiTablePageSegmentation(){
                         Mat croppedTableImage = clrImg(Rect(topLeft, bottomRight));
                         Mat croppedPointImage = pointReducedImage(Rect(topLeft, bottomRight));
 
-                        //imshow(filename+"_ConnectedTable"+ to_string(i), croppedTableImage);
+                        //imwrite(filename+"_ConnectedTable"+ to_string(i)+".jpg", croppedTableImage);
+                        //imwrite("ConnectedTable"+to_string(i)+".jpg", croppedTableImage);
                         //imshow("ConnectedPoints"+ to_string(i), croppedPointImage);
 
                         tableSegments.push_back(croppedTableImage);

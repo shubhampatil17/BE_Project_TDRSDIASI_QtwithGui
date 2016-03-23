@@ -170,5 +170,7 @@ Mat Reconstruction::reconstruction(Mat &output){
     output_image=output_image*255;
     output=output_image;
 
+    imshow("reconstruct",output);
+
     return Dataset;
 }
